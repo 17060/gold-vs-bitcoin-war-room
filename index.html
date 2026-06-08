@@ -1,0 +1,907 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gold vs Bitcoin · War Room</title>
+  <meta name="description" content="Live store-of-value battleground — prices, supply, sovereign holdings, household allocations." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Space Grotesk', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          },
+          colors: {
+            ink: '#0a0d11',
+            panel: '#11161c',
+            edge: '#1b232c',
+            edge2: '#2a3540',
+            gold: '#f5b945',
+            goldhi: '#fde08a',
+            btc: '#f7931a',
+            btchi: '#ffb45a',
+            cyan: '#22d3ee',
+            danger: '#ef4444',
+            mute: '#7a8694',
+            text: '#e3e9f0',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root { color-scheme: dark; }
+    html, body { background:#0a0d11; color:#e3e9f0; font-family:'Space Grotesk',sans-serif; }
+    .mono { font-family:'JetBrains Mono',monospace; }
+    /* tactical grid bg */
+    .grid-bg { background-image:
+      linear-gradient(rgba(245,185,69,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(245,185,69,0.04) 1px, transparent 1px);
+      background-size: 48px 48px; background-position: -1px -1px;
+    }
+    .scanline { background: repeating-linear-gradient(180deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 3px); }
+    .panel-edge { border:1px solid rgba(255,255,255,0.08); background:linear-gradient(180deg,#11161c 0%,#0d1217 100%); }
+    .panel-edge:hover { border-color: rgba(245,185,69,0.22); }
+    .corner { position:relative; }
+    .corner::before, .corner::after { content:''; position:absolute; width:14px; height:14px; border-color:#f5b945; }
+    .corner::before { top:-1px; left:-1px; border-top:2px solid; border-left:2px solid; }
+    .corner::after { bottom:-1px; right:-1px; border-bottom:2px solid; border-right:2px solid; }
+    .badge { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; padding:4px 8px; border:1px solid rgba(255,255,255,0.12); border-radius:2px; }
+    .pulse-dot { width:8px; height:8px; border-radius:50%; background:#22d3ee; box-shadow:0 0 0 0 rgba(34,211,238,0.7); animation: pulse 2s infinite; display:inline-block; }
+    @keyframes pulse { 0% { box-shadow:0 0 0 0 rgba(34,211,238,0.5);} 70% { box-shadow:0 0 0 10px rgba(34,211,238,0);} 100% { box-shadow:0 0 0 0 rgba(34,211,238,0);} }
+    .tab-btn { font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; padding:8px 14px; border:1px solid rgba(255,255,255,0.08); color:#7a8694; transition: all .2s; }
+    .tab-btn.active { background:rgba(245,185,69,0.08); border-color:#f5b945; color:#fde08a; }
+    .tab-btn:hover { color:#e3e9f0; border-color:rgba(245,185,69,0.4); }
+    .num-big { font-family:'JetBrains Mono',monospace; font-weight:700; letter-spacing:-0.02em; }
+    .stat-tile { border:1px solid rgba(255,255,255,0.07); padding:18px; background:#0e1318; position:relative; overflow:hidden; }
+    .stat-tile::before { content:''; position:absolute; top:0; left:0; width:3px; height:100%; background:var(--accent, #f5b945); }
+    .tile-gold { --accent:#f5b945; }
+    .tile-btc { --accent:#f7931a; }
+    .tile-cyan { --accent:#22d3ee; }
+    .tile-danger { --accent:#ef4444; }
+    .ticker-wrap { overflow:hidden; white-space:nowrap; border-top:1px solid rgba(255,255,255,0.08); border-bottom:1px solid rgba(255,255,255,0.08); background:#0d1116; }
+    .ticker-track { display:inline-block; animation: ticker 60s linear infinite; padding:10px 0; }
+    @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    .ticker-item { display:inline-flex; align-items:center; gap:10px; margin: 0 28px; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.06em; color:#a8b3c0; }
+    .up { color:#4ade80; } .down { color:#ef4444; } .neutral { color:#a8b3c0; }
+    .bar-track { height:6px; background:rgba(255,255,255,0.06); border-radius:0; overflow:hidden; }
+    .bar-fill { height:100%; background:linear-gradient(90deg,#f5b945,#fde08a); }
+    .bar-fill.btc { background:linear-gradient(90deg,#f7931a,#ffb45a); }
+    .scoreboard-row { border-bottom:1px solid rgba(255,255,255,0.06); }
+    .scoreboard-row:last-child { border-bottom:none; }
+    .verdict-tag { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; padding:2px 8px; border-radius:2px; }
+    .verdict-gold { background:rgba(245,185,69,0.15); color:#fde08a; border:1px solid rgba(245,185,69,0.4); }
+    .verdict-btc { background:rgba(247,147,26,0.15); color:#ffb45a; border:1px solid rgba(247,147,26,0.4); }
+    .verdict-tie { background:rgba(34,211,238,0.12); color:#7dd3fc; border:1px solid rgba(34,211,238,0.4); }
+    details > summary { cursor:pointer; list-style:none; }
+    details > summary::-webkit-details-marker { display:none; }
+    /* range slider */
+    input[type=range] { -webkit-appearance:none; background:transparent; }
+    input[type=range]::-webkit-slider-runnable-track { height:4px; background:rgba(255,255,255,0.1); border-radius:2px; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; height:16px; width:16px; background:#f5b945; border-radius:50%; margin-top:-6px; box-shadow:0 0 8px rgba(245,185,69,0.5); }
+    .snap-btn { background:rgba(34,211,238,0.08); border:1px solid rgba(34,211,238,0.4); color:#7dd3fc; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; padding:6px 12px; transition: all .2s; }
+    .snap-btn:hover { background:rgba(34,211,238,0.18); color:#bae6fd; }
+    .commander-controls { background:#0d1116; border:1px solid rgba(255,255,255,0.06); padding:12px; }
+    .heat-cell { width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:11px; }
+    .country-row { border-bottom:1px solid rgba(255,255,255,0.04); }
+    .country-row:hover { background:rgba(245,185,69,0.04); }
+
+    /* sponsor banner */
+    .sponsor-banner {
+      display:flex; align-items:center; justify-content:center;
+      width:728px; max-width:100%; height:90px;
+      margin: 56px auto;
+      border:1px dashed rgba(245,185,69,0.35);
+      background:
+        repeating-linear-gradient(45deg, rgba(245,185,69,0.025) 0 10px, transparent 10px 20px),
+        #0d1116;
+      position:relative;
+      transition: all .25s;
+      text-decoration:none;
+    }
+    .sponsor-banner:hover {
+      border-color:#f5b945;
+      background:
+        repeating-linear-gradient(45deg, rgba(245,185,69,0.05) 0 10px, transparent 10px 20px),
+        #0e1318;
+    }
+    .sponsor-banner::before, .sponsor-banner::after {
+      content:''; position:absolute; width:10px; height:10px; border-color:#f5b945;
+    }
+    .sponsor-banner::before { top:-1px; left:-1px; border-top:1.5px solid; border-left:1.5px solid; }
+    .sponsor-banner::after  { bottom:-1px; right:-1px; border-bottom:1.5px solid; border-right:1.5px solid; }
+    .sponsor-inner { text-align:center; padding: 0 20px; }
+    .sponsor-label {
+      font-family:'JetBrains Mono',monospace;
+      font-size:10px; letter-spacing:0.24em; text-transform:uppercase;
+      color:#f5b945; margin-bottom:6px;
+    }
+    .sponsor-title { font-size:18px; font-weight:600; color:#e3e9f0; letter-spacing:-0.01em; }
+    .sponsor-sub   { font-family:'JetBrains Mono',monospace; font-size:11px; color:#7a8694; margin-top:4px; letter-spacing:0.06em; }
+    @media (max-width: 768px) {
+      .sponsor-banner { height:auto; min-height:90px; padding:14px; margin: 32px auto; }
+    }
+    @media (max-width: 768px) {
+      .num-big { font-size: 1.5rem !important; word-break: keep-all; }
+      h1.font-display { font-size: 3rem !important; }
+      .stat-tile { padding: 14px; }
+    }
+  </style>
+</head>
+<body class="grid-bg">
+  <div class="scanline fixed inset-0 pointer-events-none z-50"></div>
+
+  <!-- HEADER -->
+  <header class="border-b border-edge sticky top-0 z-40 backdrop-blur bg-ink/85">
+    <div class="max-w-7xl mx-auto px-5 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-label="War Room">
+          <rect x="2" y="2" width="28" height="28" stroke="#f5b945" stroke-width="1.5"/>
+          <circle cx="11" cy="13" r="5" stroke="#f5b945" stroke-width="1.5" fill="none"/>
+          <path d="M16 18 L23 25 M19 18 L26 18 L26 25" stroke="#f7931a" stroke-width="1.5"/>
+          <circle cx="11" cy="13" r="1.5" fill="#fde08a"/>
+        </svg>
+        <div>
+          <div class="text-xs mono uppercase tracking-widest text-mute">Section 04 / Store of Value</div>
+          <div class="font-bold tracking-tight">War Room</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="pulse-dot"></span>
+        <span class="mono text-xs text-mute uppercase tracking-widest">Live · <span id="asof"></span></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- TICKER -->
+  <div class="ticker-wrap"><div class="ticker-track" id="ticker"></div></div>
+
+  <main class="max-w-7xl mx-auto px-5 py-10">
+
+    <!-- HERO -->
+    <section class="mb-12">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="badge text-gold border-gold/40">Theater Active</span>
+        <span class="badge text-mute">Briefing 24.05.2026</span>
+      </div>
+      <h1 class="font-display font-bold tracking-tight text-5xl md:text-7xl leading-[0.95] mb-5">
+        <span class="text-gold">Gold</span><span class="text-mute"> vs </span><span class="text-btc">Bitcoin</span>
+      </h1>
+      <p class="text-mute text-lg max-w-3xl leading-relaxed">
+        Two stores of value, one battleground. Sovereigns are stockpiling the ancient one at the fastest pace in modern history. The challenger crossed $100B in ETFs in 28 months. This War Room watches both — live prices, supply doctrine, vault holdings, and the share each holds of household wealth.
+      </p>
+    </section>
+
+    <!-- HEADLINE STATS -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-12">
+      <div class="stat-tile tile-gold">
+        <div class="mono text-xs text-mute uppercase tracking-widest mb-2">Gold · XAU/USD</div>
+        <div class="num-big text-2xl md:text-3xl text-goldhi whitespace-nowrap" id="gold-price">—</div>
+        <div class="mono text-xs mt-2" id="gold-chg">—</div>
+      </div>
+      <div class="stat-tile tile-btc">
+        <div class="mono text-xs text-mute uppercase tracking-widest mb-2">Bitcoin · BTC/USD</div>
+        <div class="num-big text-2xl md:text-3xl whitespace-nowrap" style="color:#ffb45a" id="btc-price">—</div>
+        <div class="mono text-xs mt-2" id="btc-chg">—</div>
+      </div>
+      <div class="stat-tile tile-cyan">
+        <div class="mono text-xs text-mute uppercase tracking-widest mb-2">Gold mkt cap</div>
+        <div class="num-big text-2xl md:text-3xl text-cyan">$31.8T</div>
+        <div class="mono text-xs mt-2 text-mute">all above-ground gold</div>
+      </div>
+      <div class="stat-tile tile-cyan">
+        <div class="mono text-xs text-mute uppercase tracking-widest mb-2">BTC mkt cap</div>
+        <div class="num-big text-2xl md:text-3xl text-cyan" id="btc-mcap">—</div>
+        <div class="mono text-xs mt-2 text-mute" id="btc-mcap-ratio">—</div>
+      </div>
+    </section>
+
+    <!-- =========================== -->
+    <!-- PANEL 1 · PRICE THEATER -->
+    <!-- =========================== -->
+    <section class="mb-14 corner panel-edge p-6 md:p-8" id="panel-price">
+      <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+        <div>
+          <div class="mono text-xs uppercase tracking-widest text-cyan mb-2">Panel 01 · Price Theater</div>
+          <h2 class="text-2xl md:text-3xl font-bold">Decade of price action, side by side</h2>
+          <p class="text-mute text-sm mt-1">Normalized 100 = start of selected window. Regime markers overlaid.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button class="snap-btn" data-snap="price">⌖ Snapshot</button>
+        </div>
+      </div>
+
+      <div class="commander-controls mb-5 flex flex-wrap gap-2 items-center">
+        <span class="mono text-[10px] uppercase tracking-widest text-mute mr-2">Window</span>
+        <button class="tab-btn window-btn" data-window="1y">1Y</button>
+        <button class="tab-btn window-btn active" data-window="5y">5Y</button>
+        <button class="tab-btn window-btn" data-window="10y">10Y</button>
+        <span class="mono text-[10px] uppercase tracking-widest text-mute mx-3">Mode</span>
+        <button class="tab-btn mode-btn active" data-mode="normalized">Indexed</button>
+        <button class="tab-btn mode-btn" data-mode="absolute">Absolute</button>
+        <button class="tab-btn mode-btn" data-mode="ratio">BTC/Gold ratio</button>
+        <label class="flex items-center gap-2 ml-3 cursor-pointer">
+          <input type="checkbox" id="show-regimes" checked class="accent-gold"/>
+          <span class="mono text-[10px] uppercase tracking-widest text-mute">Regime markers</span>
+        </label>
+      </div>
+
+      <div class="relative" style="height:420px;">
+        <canvas id="priceChart"></canvas>
+      </div>
+
+      <div class="grid grid-cols-3 md:grid-cols-6 gap-2 mt-6" id="returns-grid"></div>
+    </section>
+
+    <!-- =========================== -->
+    <!-- PANEL 2 · SUPPLY DOCTRINE -->
+    <!-- =========================== -->
+    <section class="mb-14 corner panel-edge p-6 md:p-8" id="panel-supply">
+      <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+        <div>
+          <div class="mono text-xs uppercase tracking-widest text-cyan mb-2">Panel 02 · Supply Doctrine</div>
+          <h2 class="text-2xl md:text-3xl font-bold">How much exists. How much will ever exist.</h2>
+          <p class="text-mute text-sm mt-1">Stock-to-flow side by side. The asset with higher S2F is harder to dilute.</p>
+        </div>
+        <button class="snap-btn" data-snap="supply">⌖ Snapshot</button>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- Gold -->
+        <div class="bg-[#0d1318] border border-edge p-6 corner">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-goldhi">Gold</h3>
+            <span class="badge text-gold border-gold/40">XAU</span>
+          </div>
+          <div class="grid grid-cols-2 gap-4 mb-5">
+            <div>
+              <div class="mono text-[10px] uppercase tracking-widest text-mute">Above-ground stock</div>
+              <div class="num-big text-2xl text-goldhi">219,891<span class="text-sm text-mute"> t</span></div>
+            </div>
+            <div>
+              <div class="mono text-[10px] uppercase tracking-widest text-mute">2025 mine output</div>
+              <div class="num-big text-2xl">3,672<span class="text-sm text-mute"> t</span></div>
+            </div>
+            <div>
+              <div class="mono text-[10px] uppercase tracking-widest text-mute">Supply growth/yr</div>
+              <div class="num-big text-2xl">+1.67<span class="text-sm text-mute">%</span></div>
+            </div>
+            <div>
+              <div class="mono text-[10px] uppercase tracking-widest text-mute">Stock-to-flow</div>
+              <div class="num-big text-2xl text-gold">59.9</div>
+            </div>
+          </div>
+          <div class="mono text-[10px] uppercase tracking-widest text-mute mb-2">Composition of above-ground gold</div>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span>Jewellery</span><span class="mono">97,149 t · 44%</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:44%"></div></div>
+            <div class="flex justify-between"><span>Bars, coins, ETFs</span><span class="mono">48,634 t · 22%</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:22%"></div></div>
+            <div class="flex justify-between"><span>Central banks</span><span class="mono">37,755 t · 17%</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:17%"></div></div>
+            <div class="flex justify-between"><span>Industrial / other</span><span class="mono">32,727 t · 15%</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:15%"></div></div>
+          </div>
+        </div>
+
+        <!-- Bitcoin -->
+        <div class="bg-[#0d1318] border border-edge p-6 corner">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold" style="color:#ffb45a">Bitcoin</h3>
+            <span class="badge" style="color:#ffb45a;border-color:rgba(247,147,26,0.4)">BTC</span>
+          </div>
+          <div class="grid grid-cols-2 gap-4 mb-5">
+            <div>
+              <div class="mono text-[10px] uppercase tracking-widest text-mute">Circulating supply</div>
+              <div class="num-big text-2xl" style="color:#ffb45a">19.92<span class="text-sm text-mute">M</span></div>
+            </div>
+            <div>
+              <div class="mono text-[10px] uppercase tracking-widest text-mute">Hard cap</div>
+              <div class="num-big text-2xl">21<span class="text-sm text-mute">M</span></div>
+            </div>
+            <div>
+              <div class="mono text-[10px] uppercase tracking-widest text-mute">Supply growth/yr</div>
+              <div class="num-big text-2xl">+0.82<span class="text-sm text-mute">%</span></div>
+            </div>
+            <div>
+              <div class="mono text-[10px] uppercase tracking-widest text-mute">Stock-to-flow</div>
+              <div class="num-big text-2xl text-btc">121.3</div>
+            </div>
+          </div>
+
+          <div class="mono text-[10px] uppercase tracking-widest text-mute mb-2">Issuance progress</div>
+          <div class="flex justify-between text-sm mb-1"><span>Mined</span><span class="mono">94.86%</span></div>
+          <div class="bar-track mb-4"><div class="bar-fill btc" style="width:94.86%"></div></div>
+
+          <div class="bg-ink/60 border border-edge p-3 mt-2">
+            <div class="mono text-[10px] uppercase tracking-widest text-mute mb-1">Next halving</div>
+            <div class="num-big text-xl" id="halving-countdown">—</div>
+            <div class="mono text-xs text-mute mt-1">Block reward 3.125 → 1.5625 BTC · est. 26 Mar 2028</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 bg-[#0d1318] border border-edge p-5">
+        <div class="mono text-[10px] uppercase tracking-widest text-mute mb-3">Stock-to-flow head-to-head — higher = harder money</div>
+        <div class="space-y-3">
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span>Bitcoin</span><span class="mono text-btc">121.3</span></div>
+            <div class="bar-track"><div class="bar-fill btc" style="width:100%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span>Gold</span><span class="mono text-gold">59.9</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:49.4%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1 text-mute"><span>Silver</span><span class="mono">22</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:18%;background:#94a3b8"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== SPONSOR SLOT 01 ========== -->
+    <a href="mailto:wilcaldrich@gmail.com?subject=War%20Room%20Sponsorship%20-%20Slot%2001" class="sponsor-banner" id="sponsor-1">
+      <div class="sponsor-inner">
+        <div class="sponsor-label">□ Sponsor Slot 01 · Available</div>
+        <div class="sponsor-title">Your brand alongside the world's most-watched assets</div>
+        <div class="sponsor-sub">728 × 90 · Click to inquire</div>
+      </div>
+    </a>
+
+    <!-- =========================== -->
+    <!-- PANEL 2.5 · EXCHANGE RATE -->
+    <!-- =========================== -->
+    <section class="mb-14 corner panel-edge p-6 md:p-8" id="panel-exchange">
+      <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+        <div>
+          <div class="mono text-xs uppercase tracking-widest text-cyan mb-2">Panel 03 · Exchange Rate</div>
+          <h2 class="text-2xl md:text-3xl font-bold">One Bitcoin buys how much gold?</h2>
+          <p class="text-mute text-sm mt-1">The honest unit price between the two stores of value. A rising line means BTC is gaining on gold.</p>
+        </div>
+        <button class="snap-btn" data-snap="exchange">⌖ Snapshot</button>
+      </div>
+
+      <!-- Headline tiles -->
+      <div class="grid md:grid-cols-3 gap-3 mb-6">
+        <div class="stat-tile tile-btc">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute">1 BTC buys</div>
+          <div class="num-big text-3xl" style="color:#ffb45a" id="btc-in-oz">—</div>
+          <div class="mono text-xs text-mute mt-1">troy ounces of gold</div>
+        </div>
+        <div class="stat-tile tile-gold">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute">1 oz of gold buys</div>
+          <div class="num-big text-3xl text-goldhi" id="oz-in-btc">—</div>
+          <div class="mono text-xs text-mute mt-1">bitcoin <span id="oz-in-sats" class="text-mute"></span></div>
+        </div>
+        <div class="stat-tile tile-cyan">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute">1 kg of gold buys</div>
+          <div class="num-big text-3xl text-cyan" id="kg-in-btc">—</div>
+          <div class="mono text-xs text-mute mt-1">bitcoin</div>
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-5 gap-6">
+        <!-- chart -->
+        <div class="lg:col-span-3 bg-[#0d1318] border border-edge p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div class="mono text-[10px] uppercase tracking-widest text-mute">Ounces of gold per 1 BTC · weekly</div>
+            <div class="flex gap-1">
+              <button class="tab-btn ratio-btn" data-ratio-window="1y">1Y</button>
+              <button class="tab-btn ratio-btn" data-ratio-window="5y">5Y</button>
+              <button class="tab-btn ratio-btn active" data-ratio-window="10y">10Y</button>
+            </div>
+          </div>
+          <div style="height:300px"><canvas id="ratioChart"></canvas></div>
+          <div class="grid grid-cols-3 gap-2 mt-4 text-xs">
+            <div class="border border-edge p-2">
+              <div class="mono text-[10px] uppercase tracking-widest text-mute">All-time peak</div>
+              <div class="mono text-cyan mt-1" id="ratio-peak">—</div>
+            </div>
+            <div class="border border-edge p-2">
+              <div class="mono text-[10px] uppercase tracking-widest text-mute">All-time low</div>
+              <div class="mono text-cyan mt-1" id="ratio-low">—</div>
+            </div>
+            <div class="border border-edge p-2">
+              <div class="mono text-[10px] uppercase tracking-widest text-mute">vs 5Y avg</div>
+              <div class="mono text-cyan mt-1" id="ratio-vs-avg">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- converter -->
+        <div class="lg:col-span-2 bg-[#0d1318] border border-edge p-5">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute mb-4">Converter</div>
+
+          <!-- BTC → Gold -->
+          <div class="mb-5">
+            <label class="mono text-[10px] uppercase tracking-widest text-mute">Bitcoin amount</label>
+            <div class="flex items-stretch mt-1">
+              <input type="number" id="conv-btc" value="1" step="0.01" min="0" class="flex-1 bg-ink border border-edge px-3 py-2 mono text-lg text-text focus:outline-none focus:border-btc"/>
+              <span class="px-3 py-2 mono text-xs text-mute border-l-0 border border-edge bg-ink/60 self-stretch flex items-center">BTC</span>
+            </div>
+            <div class="mt-2 mono text-sm text-mute flex items-center justify-between">
+              <span>= <span id="conv-btc-oz" class="text-goldhi">—</span> oz gold</span>
+              <span class="text-xs">· <span id="conv-btc-kg" class="text-goldhi">—</span> kg</span>
+            </div>
+            <div class="mono text-xs text-mute mt-1">= <span id="conv-btc-usd" class="text-cyan">—</span></div>
+          </div>
+
+          <div class="border-t border-edge my-4"></div>
+
+          <!-- Gold → BTC -->
+          <div class="mb-3">
+            <label class="mono text-[10px] uppercase tracking-widest text-mute">Gold amount</label>
+            <div class="flex items-stretch mt-1">
+              <input type="number" id="conv-gold" value="100" step="1" min="0" class="flex-1 bg-ink border border-edge px-3 py-2 mono text-lg text-text focus:outline-none focus:border-gold"/>
+              <select id="conv-gold-unit" class="px-2 py-2 mono text-xs text-mute border-l-0 border border-edge bg-ink/60">
+                <option value="oz">oz</option>
+                <option value="g">g</option>
+                <option value="kg">kg</option>
+              </select>
+            </div>
+            <div class="mt-2 mono text-sm text-mute">
+              = <span id="conv-gold-btc" style="color:#ffb45a">—</span> BTC
+              <span class="text-xs">· <span id="conv-gold-sats" class="text-mute">—</span> sats</span>
+            </div>
+            <div class="mono text-xs text-mute mt-1">= <span id="conv-gold-usd" class="text-cyan">—</span></div>
+          </div>
+
+          <div class="mt-5 pt-4 border-t border-edge">
+            <div class="mono text-[10px] uppercase tracking-widest text-mute mb-2">Quick references</div>
+            <div class="space-y-1 text-xs mono">
+              <div class="flex justify-between"><span class="text-mute">1 BTC · gold bar (400 oz London Good Delivery)</span><span id="qr-london" class="text-goldhi">—</span></div>
+              <div class="flex justify-between"><span class="text-mute">1 BTC · 1 kg gold bar</span><span id="qr-kilo" class="text-goldhi">—</span></div>
+              <div class="flex justify-between"><span class="text-mute">1 BTC · American Gold Eagle (1 oz)</span><span id="qr-eagle" class="text-goldhi">—</span></div>
+              <div class="flex justify-between"><span class="text-mute">All US gold reserves (8,133 t)</span><span class="whitespace-nowrap"><span id="qr-fortknox" style="color:#ffb45a">—</span> BTC</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================== -->
+    <!-- PANEL 3 · SOVEREIGN VAULTS (now Panel 04) -->
+    <!-- =========================== -->
+    <section class="mb-14 corner panel-edge p-6 md:p-8" id="panel-vaults">
+      <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+        <div>
+          <div class="mono text-xs uppercase tracking-widest text-cyan mb-2">Panel 06 · Sovereign Vaults</div>
+          <h2 class="text-2xl md:text-3xl font-bold">Central banks bought 863t of gold in 2025</h2>
+          <p class="text-mute text-sm mt-1">Three straight years above 1,000t was the modern record. 2025 cooled — but still 82% above the 2010–2021 average.</p>
+        </div>
+        <button class="snap-btn" data-snap="vaults">⌖ Snapshot</button>
+      </div>
+
+      <div class="grid lg:grid-cols-5 gap-6">
+        <!-- annual chart -->
+        <div class="lg:col-span-3 bg-[#0d1318] border border-edge p-5">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute mb-3">Net central bank gold demand · tonnes per year</div>
+          <div style="height:280px;"><canvas id="cbChart"></canvas></div>
+          <div class="mt-3 text-xs text-mute">Source: World Gold Council, <a href="https://www.gold.org/goldhub/research/gold-demand-trends/gold-demand-trends-full-year-2025/central-banks" class="text-cyan hover:underline">Gold Demand Trends FY2025</a></div>
+        </div>
+
+        <!-- top holders -->
+        <div class="lg:col-span-2 bg-[#0d1318] border border-edge p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div class="mono text-[10px] uppercase tracking-widest text-mute">Top sovereign holders</div>
+            <div class="mono text-[10px] uppercase tracking-widest text-mute">Tonnes</div>
+          </div>
+          <div id="holders-list" class="text-sm"></div>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-3 mt-5">
+        <div class="stat-tile tile-gold">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute">Total official gold</div>
+          <div class="num-big text-2xl text-goldhi">~36,000<span class="text-sm text-mute"> t</span></div>
+          <div class="text-xs text-mute mt-1">17.2% of all above-ground gold</div>
+        </div>
+        <div class="stat-tile tile-gold">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute">2025 top buyer</div>
+          <div class="num-big text-2xl text-goldhi">Poland</div>
+          <div class="text-xs text-mute mt-1">102t added · 2× the runner-up</div>
+        </div>
+        <div class="stat-tile tile-btc">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute">Sovereign BTC</div>
+          <div class="num-big text-2xl" style="color:#ffb45a">~0.2M</div>
+          <div class="text-xs text-mute mt-1">Mostly US Strategic Reserve (seized assets) + El Salvador</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================== -->
+    <!-- PANEL 04 · TIME MACHINE (What-if calculator) -->
+    <!-- =========================== -->
+    <section class="mb-14 corner panel-edge p-6 md:p-8" id="panel-timemachine">
+      <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+        <div>
+          <div class="mono text-xs uppercase tracking-widest text-cyan mb-2">Panel 04 · Time Machine</div>
+          <h2 class="text-2xl md:text-3xl font-bold">What if you had bought — then?</h2>
+          <p class="text-mute text-sm mt-1">Pick a date, pick an amount. We'll tell you what gold, bitcoin, and the S&amp;P 500 would be worth today.</p>
+        </div>
+        <button class="snap-btn" data-snap="timemachine">⌖ Snapshot</button>
+      </div>
+
+      <!-- Inputs -->
+      <div class="commander-controls mb-6 flex flex-wrap gap-4 items-center">
+        <label class="flex items-center gap-3 text-sm">
+          <span class="mono text-[10px] uppercase tracking-widest text-mute">Amount</span>
+          <div class="flex items-stretch">
+            <span class="px-2 py-2 mono text-xs text-mute border border-edge border-r-0 bg-ink/60 self-stretch flex items-center">$</span>
+            <input type="number" id="tm-amount" value="10000" min="100" step="100" class="w-32 bg-ink border border-edge px-3 py-2 mono text-base text-text focus:outline-none focus:border-gold"/>
+          </div>
+        </label>
+        <label class="flex items-center gap-3 text-sm">
+          <span class="mono text-[10px] uppercase tracking-widest text-mute">Invested on</span>
+          <input type="date" id="tm-date" value="2020-03-23" class="bg-ink border border-edge px-3 py-2 mono text-base text-text focus:outline-none focus:border-gold"/>
+        </label>
+        <div class="flex gap-1">
+          <span class="mono text-[10px] uppercase tracking-widest text-mute self-center mr-1">Presets:</span>
+          <button class="tab-btn tm-preset" data-preset="covid">COVID crash</button>
+          <button class="tab-btn tm-preset" data-preset="etf">BTC ETF launch</button>
+          <button class="tab-btn tm-preset" data-preset="5y">5 yrs ago</button>
+          <button class="tab-btn tm-preset" data-preset="10y">10 yrs ago</button>
+        </div>
+      </div>
+
+      <!-- Result tiles -->
+      <div class="grid md:grid-cols-3 gap-3 mb-6">
+        <div class="stat-tile tile-gold">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute mb-2">Gold (XAU/USD)</div>
+          <div class="num-big text-3xl text-goldhi" id="tm-gold-value">—</div>
+          <div class="mono text-xs mt-2"><span id="tm-gold-return" class="up">—</span> <span class="text-mute">· <span id="tm-gold-multiplier">—</span></span></div>
+        </div>
+        <div class="stat-tile tile-btc">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute mb-2">Bitcoin (BTC/USD)</div>
+          <div class="num-big text-3xl" style="color:#ffb45a" id="tm-btc-value">—</div>
+          <div class="mono text-xs mt-2"><span id="tm-btc-return" class="up">—</span> <span class="text-mute">· <span id="tm-btc-multiplier">—</span></span></div>
+        </div>
+        <div class="stat-tile tile-cyan">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute mb-2">S&amp;P 500 (benchmark)</div>
+          <div class="num-big text-3xl text-cyan" id="tm-spx-value">—</div>
+          <div class="mono text-xs mt-2"><span id="tm-spx-return" class="up">—</span> <span class="text-mute">· <span id="tm-spx-multiplier">—</span></span></div>
+        </div>
+      </div>
+
+      <!-- Growth chart -->
+      <div class="bg-[#0d1318] border border-edge p-5 mb-5">
+        <div class="mono text-[10px] uppercase tracking-widest text-mute mb-3" id="tm-chart-label">Growth of $10,000 · weekly</div>
+        <div style="height:280px"><canvas id="tmChart"></canvas></div>
+      </div>
+
+      <!-- Receipt -->
+      <div class="grid md:grid-cols-2 gap-3">
+        <div class="bg-[#0d1318] border border-edge p-4">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute mb-2">What that bought</div>
+          <div class="text-sm space-y-1.5">
+            <div class="flex justify-between"><span class="text-mute">Gold acquired</span><span class="mono text-goldhi" id="tm-gold-oz">—</span></div>
+            <div class="flex justify-between"><span class="text-mute">Bitcoin acquired</span><span class="mono" style="color:#ffb45a" id="tm-btc-amount">—</span></div>
+            <div class="flex justify-between"><span class="text-mute">Days held</span><span class="mono text-text" id="tm-days">—</span></div>
+          </div>
+        </div>
+        <div class="bg-[#0d1318] border border-edge p-4">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute mb-2">The winner</div>
+          <div class="text-sm" id="tm-verdict">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================== -->
+    <!-- PANEL 05 · DEBASEMENT FRONT -->
+    <!-- =========================== -->
+    <section class="mb-14 corner panel-edge p-6 md:p-8" id="panel-debasement">
+      <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+        <div>
+          <div class="mono text-xs uppercase tracking-widest text-cyan mb-2">Panel 05 · Debasement Front</div>
+          <h2 class="text-2xl md:text-3xl font-bold">Why hold either? The dollar tells you.</h2>
+          <p class="text-mute text-sm mt-1">M2 money supply, federal debt, and consumer prices over the same decade gold tripled and Bitcoin did 168×.</p>
+        </div>
+        <button class="snap-btn" data-snap="debasement">⌖ Snapshot</button>
+      </div>
+
+      <!-- Three big headline tiles -->
+      <div class="grid md:grid-cols-3 gap-3 mb-6">
+        <div class="stat-tile tile-danger">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute">M2 Money Supply</div>
+          <div class="num-big text-3xl text-danger mt-1">$22.7T</div>
+          <div class="mono text-xs mt-2"><span class="up">+93%</span> <span class="text-mute">since 2015 · source FRED</span></div>
+        </div>
+        <div class="stat-tile tile-danger">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute">US National Debt</div>
+          <div class="num-big text-3xl text-danger mt-1">$39.0T</div>
+          <div class="mono text-xs mt-2"><span class="up">+116%</span> <span class="text-mute">since 2015 · source Treasury</span></div>
+        </div>
+        <div class="stat-tile tile-danger">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute">CPI inflation</div>
+          <div class="num-big text-3xl text-danger mt-1">+3.8%</div>
+          <div class="mono text-xs mt-2"><span class="text-mute">YoY April 2026 · cumulative</span> <span class="up">+40%</span> <span class="text-mute">since 2015</span></div>
+        </div>
+      </div>
+
+      <!-- Three column chart layout -->
+      <div class="grid md:grid-cols-2 gap-6 mb-5">
+        <div class="bg-[#0d1318] border border-edge p-5">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute mb-3">Indexed growth since 2015 · base = 100</div>
+          <div style="height:300px"><canvas id="debasementChart"></canvas></div>
+          <div class="mt-3 text-xs text-mute">Every line above 100 is the dollar losing ground.</div>
+        </div>
+        <div class="bg-[#0d1318] border border-edge p-5">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute mb-3">Purchasing power of $1 (2015 dollars)</div>
+          <div class="flex flex-col items-center justify-center" style="height:200px">
+            <div class="num-big text-7xl text-danger">$0.71</div>
+            <div class="mono text-xs text-mute mt-3">today buys what $0.71 bought in 2015</div>
+          </div>
+          <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
+            <div class="border border-edge p-3">
+              <div class="mono text-[10px] uppercase tracking-widest text-mute">Same period: Gold</div>
+              <div class="text-goldhi mono mt-1">+138% (2.4×)</div>
+            </div>
+            <div class="border border-edge p-3">
+              <div class="mono text-[10px] uppercase tracking-widest text-mute">Same period: Bitcoin</div>
+              <div class="mono mt-1" style="color:#ffb45a">+16,822% (168×)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom strip -->
+      <div class="bg-[#0d1318] border border-edge p-5">
+        <div class="mono text-[10px] uppercase tracking-widest text-mute mb-3">The debasement thesis, in one sentence</div>
+        <p class="text-sm leading-relaxed">Since 2015, the dollar supply has nearly doubled, the national debt has more than doubled, and consumer prices have risen 40%. Gold and Bitcoin are the two assets whose supply schedules don't bend to political pressure — which is exactly why central banks are buying one and households are starting to buy the other.</p>
+        <div class="mt-3 flex flex-wrap gap-3 text-xs text-mute">
+          <a href="https://fred.stlouisfed.org/series/M2SL" class="text-cyan hover:underline">FRED M2SL</a>
+          <a href="https://fiscaldata.treasury.gov/datasets/historical-debt-outstanding/" class="text-cyan hover:underline">Treasury historical debt</a>
+          <a href="https://www.bls.gov/news.release/pdf/cpi.pdf" class="text-cyan hover:underline">BLS CPI release</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== SPONSOR SLOT 02 ========== -->
+    <a href="mailto:wilcaldrich@gmail.com?subject=War%20Room%20Sponsorship%20-%20Slot%2002" class="sponsor-banner" id="sponsor-2">
+      <div class="sponsor-inner">
+        <div class="sponsor-label">□ Sponsor Slot 02 · Available</div>
+        <div class="sponsor-title">Reach investors thinking in centuries, not quarters</div>
+        <div class="sponsor-sub">728 × 90 · Click to inquire</div>
+      </div>
+    </a>
+
+    <!-- =========================== -->
+    <!-- PANEL 4 · HOUSEHOLD FRONT -->
+    <!-- =========================== -->
+    <section class="mb-14 corner panel-edge p-6 md:p-8" id="panel-households">
+      <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+        <div>
+          <div class="mono text-xs uppercase tracking-widest text-cyan mb-2">Panel 07 · Household Front</div>
+          <h2 class="text-2xl md:text-3xl font-bold">$175.3T of US household wealth — and where it isn't</h2>
+          <p class="text-mute text-sm mt-1">Federal Reserve Z.1 reports $175.3T in household net worth at end-2025. Both gold and bitcoin remain low single-digit allocations.</p>
+        </div>
+        <button class="snap-btn" data-snap="households">⌖ Snapshot</button>
+      </div>
+
+      <div class="grid lg:grid-cols-3 gap-6">
+        <!-- Allocation visualization -->
+        <div class="lg:col-span-2 bg-[#0d1318] border border-edge p-5">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute mb-4">Share of US household net worth · $175.3T base</div>
+          <div class="space-y-5">
+            <div>
+              <div class="flex justify-between mb-1"><span class="text-sm">Gold (private holdings)</span><span class="mono text-gold">0.83% · ~$1.45T</span></div>
+              <div class="bar-track" style="height:14px;"><div class="bar-fill" style="width:0.83%"></div></div>
+              <div class="text-xs text-mute mt-1">~10,500t in private US hands at $4,505/oz · jewellery, bars, coins, ETFs</div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1"><span class="text-sm">Bitcoin (US-share estimate)</span><span class="mono" style="color:#ffb45a">0.88% · ~$1.54T</span></div>
+              <div class="bar-track" style="height:14px;"><div class="bar-fill btc" style="width:0.88%"></div></div>
+              <div class="text-xs text-mute mt-1">Spot ETFs $100B + retail self-custody · ~25% US share of global mkt cap</div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1"><span class="text-sm text-mute">Real estate, equities, bonds, cash</span><span class="mono text-mute">98.3%</span></div>
+              <div class="bar-track" style="height:14px;"><div class="bar-fill" style="width:98.3%;background:#475569"></div></div>
+            </div>
+          </div>
+
+          <div class="mt-6 grid grid-cols-2 gap-3 text-xs">
+            <div class="border border-edge p-3">
+              <div class="mono text-mute uppercase tracking-widest mb-1">If gold matched real estate</div>
+              <div class="text-goldhi">28× current allocation</div>
+            </div>
+            <div class="border border-edge p-3">
+              <div class="mono text-mute uppercase tracking-widest mb-1">If BTC went to 2% of net worth</div>
+              <div style="color:#ffb45a">+$1.96T inflow needed</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ETF AUM -->
+        <div class="bg-[#0d1318] border border-edge p-5">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute mb-3">Spot BTC ETF holdings · 21 May 2026</div>
+          <div class="num-big text-3xl mb-1" style="color:#ffb45a">$100.1B</div>
+          <div class="text-xs text-mute mb-4">1,304,888 BTC · 6.21% of all bitcoin</div>
+          <div id="etf-list" class="space-y-2 text-sm"></div>
+          <div class="mt-3 text-xs text-mute">Source: <a href="https://bitbo.io/treasuries/us-etfs/" class="text-cyan hover:underline">Bitbo / CoinGlass</a></div>
+        </div>
+      </div>
+
+      <div class="mt-5 bg-[#0d1318] border border-edge p-5">
+        <div class="commander-controls mb-4 flex flex-wrap gap-3 items-center">
+          <span class="mono text-[10px] uppercase tracking-widest text-mute">Allocation simulator</span>
+          <label class="text-sm flex items-center gap-3">Gold weight
+            <input type="range" id="gold-slider" min="0" max="20" value="5" step="0.5" class="w-32"/>
+            <span class="mono text-gold w-12" id="gold-w">5.0%</span>
+          </label>
+          <label class="text-sm flex items-center gap-3">BTC weight
+            <input type="range" id="btc-slider" min="0" max="20" value="2" step="0.5" class="w-32"/>
+            <span class="mono w-12" style="color:#ffb45a" id="btc-w">2.0%</span>
+          </label>
+        </div>
+        <div class="grid md:grid-cols-3 gap-3">
+          <div class="text-sm">
+            <div class="mono text-[10px] uppercase tracking-widest text-mute">Required inflow · gold</div>
+            <div class="num-big text-xl text-goldhi" id="sim-gold">—</div>
+          </div>
+          <div class="text-sm">
+            <div class="mono text-[10px] uppercase tracking-widest text-mute">Required inflow · BTC</div>
+            <div class="num-big text-xl" style="color:#ffb45a" id="sim-btc">—</div>
+          </div>
+          <div class="text-sm">
+            <div class="mono text-[10px] uppercase tracking-widest text-mute">% of total above-ground gold needed</div>
+            <div class="num-big text-xl text-cyan" id="sim-pctgold">—</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================== -->
+    <!-- PANEL 5 · VOLATILITY INDEX -->
+    <!-- =========================== -->
+    <section class="mb-14 corner panel-edge p-6 md:p-8" id="panel-vol">
+      <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+        <div>
+          <div class="mono text-xs uppercase tracking-widest text-cyan mb-2">Panel 08 · Volatility & Correlation</div>
+          <h2 class="text-2xl md:text-3xl font-bold">Risk profile, head-to-head</h2>
+          <p class="text-mute text-sm mt-1">Annualized realized volatility and 1-year return correlations. Lower vol = more "store-of-value" behavior.</p>
+        </div>
+        <button class="snap-btn" data-snap="vol">⌖ Snapshot</button>
+      </div>
+
+      <div class="grid lg:grid-cols-2 gap-6">
+        <div class="bg-[#0d1318] border border-edge p-5">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute mb-3">Annualized realized volatility · %</div>
+          <div style="height:240px"><canvas id="volChart"></canvas></div>
+        </div>
+        <div class="bg-[#0d1318] border border-edge p-5">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute mb-3">1-year return correlation matrix</div>
+          <div id="corr-matrix"></div>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-3 mt-5">
+        <div class="stat-tile tile-gold">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute">Gold 1Y vol</div>
+          <div class="num-big text-2xl text-goldhi" id="vol-gold">—</div>
+          <div class="text-xs text-mute mt-1">5Y max drawdown <span id="dd-gold" class="mono">—</span></div>
+        </div>
+        <div class="stat-tile tile-btc">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute">BTC 1Y vol</div>
+          <div class="num-big text-2xl" style="color:#ffb45a" id="vol-btc">—</div>
+          <div class="text-xs text-mute mt-1">5Y max drawdown <span id="dd-btc" class="mono">—</span></div>
+        </div>
+        <div class="stat-tile tile-cyan">
+          <div class="mono text-[10px] uppercase tracking-widest text-mute">Gold·BTC corr</div>
+          <div class="num-big text-2xl text-cyan" id="corr-key">—</div>
+          <div class="text-xs text-mute mt-1">Diversification still works — they don't move together.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== SPONSOR SLOT 03 ========== -->
+    <a href="mailto:wilcaldrich@gmail.com?subject=War%20Room%20Sponsorship%20-%20Slot%2003" class="sponsor-banner" id="sponsor-3">
+      <div class="sponsor-inner">
+        <div class="sponsor-label">□ Sponsor Slot 03 · Available</div>
+        <div class="sponsor-title">Premium placement before the final verdict</div>
+        <div class="sponsor-sub">728 × 90 · Click to inquire</div>
+      </div>
+    </a>
+
+    <!-- =========================== -->
+    <!-- PANEL 6 · SCOREBOARD -->
+    <!-- =========================== -->
+    <section class="mb-14 corner panel-edge p-6 md:p-8" id="panel-scoreboard">
+      <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+        <div>
+          <div class="mono text-xs uppercase tracking-widest text-cyan mb-2">Panel 09 · Scoreboard</div>
+          <h2 class="text-2xl md:text-3xl font-bold">Twelve criteria. One verdict.</h2>
+          <p class="text-mute text-sm mt-1">Each axis is scored 1–10. Hover or tap any row for the case file.</p>
+        </div>
+        <button class="snap-btn" data-snap="scoreboard">⌖ Snapshot</button>
+      </div>
+
+      <div class="grid lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-[#0d1318] border border-edge p-5">
+          <div id="scoreboard"></div>
+        </div>
+        <div class="space-y-3">
+          <div class="bg-[#0d1318] border border-edge p-5">
+            <div class="mono text-[10px] uppercase tracking-widest text-mute mb-2">Total · Gold</div>
+            <div class="num-big text-4xl text-goldhi" id="score-gold">—</div>
+            <div class="bar-track mt-3"><div class="bar-fill" id="bar-gold" style="width:0%"></div></div>
+          </div>
+          <div class="bg-[#0d1318] border border-edge p-5">
+            <div class="mono text-[10px] uppercase tracking-widest text-mute mb-2">Total · Bitcoin</div>
+            <div class="num-big text-4xl" style="color:#ffb45a" id="score-btc">—</div>
+            <div class="bar-track mt-3"><div class="bar-fill btc" id="bar-btc" style="width:0%"></div></div>
+          </div>
+          <div class="bg-[#0d1318] border border-edge p-5">
+            <div class="mono text-[10px] uppercase tracking-widest text-mute mb-3">Commander's verdict</div>
+            <p class="text-sm leading-relaxed">Gold wins on track record, liquidity and sovereign adoption. Bitcoin wins on scarcity, portability and censorship resistance. The honest answer is <span class="text-cyan">they're complementary</span>, not substitutes — one is the asset central banks already own, the other is the asset they don't yet.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NARRATIVES -->
+    <section class="mb-14 grid md:grid-cols-2 gap-6">
+      <div class="panel-edge p-6 corner">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="badge text-gold border-gold/40">Bull case</span>
+          <h3 class="text-xl font-bold text-goldhi">Gold</h3>
+        </div>
+        <ul class="space-y-2 text-sm" id="bull-gold"></ul>
+        <div class="flex items-center gap-2 mt-6 mb-3">
+          <span class="badge text-danger border-danger/40">Bear case</span>
+        </div>
+        <ul class="space-y-2 text-sm text-mute" id="bear-gold"></ul>
+      </div>
+      <div class="panel-edge p-6 corner">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="badge" style="color:#ffb45a;border-color:rgba(247,147,26,0.4)">Bull case</span>
+          <h3 class="text-xl font-bold" style="color:#ffb45a">Bitcoin</h3>
+        </div>
+        <ul class="space-y-2 text-sm" id="bull-btc"></ul>
+        <div class="flex items-center gap-2 mt-6 mb-3">
+          <span class="badge text-danger border-danger/40">Bear case</span>
+        </div>
+        <ul class="space-y-2 text-sm text-mute" id="bear-btc"></ul>
+      </div>
+    </section>
+
+    <!-- SOURCES -->
+    <footer class="border-t border-edge pt-8 pb-12">
+      <div class="mono text-xs uppercase tracking-widest text-mute mb-3">Sources / Briefing pack</div>
+      <ul class="text-sm text-mute grid md:grid-cols-2 gap-2">
+        <li>· Prices: Perplexity Finance · XAU/USD, BTC/USD spot, daily close 2015-05 → 2026-05</li>
+        <li>· <a class="text-cyan hover:underline" href="https://www.gold.org/goldhub/research/gold-demand-trends/gold-demand-trends-full-year-2025">World Gold Council — Gold Demand Trends FY2025</a></li>
+        <li>· <a class="text-cyan hover:underline" href="https://www.gold.org/goldhub/data/how-much-gold">WGC — How much gold has been mined</a></li>
+        <li>· <a class="text-cyan hover:underline" href="https://fred.stlouisfed.org/series/BOGZ1FL192090005Q">FRED / Federal Reserve Z.1 — Household Net Worth</a></li>
+        <li>· <a class="text-cyan hover:underline" href="https://bitbo.io/treasuries/us-etfs/">Bitbo — US Spot Bitcoin ETF holdings</a></li>
+        <li>· <a class="text-cyan hover:underline" href="https://www.swanbitcoin.com/education/bitcoin-halving-dates/">Swan Bitcoin — Halving schedule</a></li>
+      </ul>
+      <div class="mt-8 text-xs text-mute">Briefing compiled <span id="footer-asof"></span>. Not investment advice.</div>
+    </footer>
+  </main>
+
+  <!-- Snapshot card overlay -->
+  <div id="snap-overlay" class="fixed inset-0 bg-black/85 z-[60] hidden items-center justify-center p-4">
+    <div class="max-w-3xl w-full">
+      <div class="flex justify-between mb-3">
+        <div class="mono text-xs uppercase tracking-widest text-mute">Shareable snapshot</div>
+        <div class="flex gap-2">
+          <button id="snap-download" class="snap-btn">↓ Download PNG</button>
+          <button id="snap-close" class="snap-btn">✕ Close</button>
+        </div>
+      </div>
+      <canvas id="snap-canvas" width="1200" height="630" class="w-full border border-edge bg-ink"></canvas>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

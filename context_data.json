@@ -1,0 +1,230 @@
+{
+  "as_of": "2026-05-24",
+  "supply": {
+    "gold": {
+      "above_ground_tonnes": 219891,
+      "above_ground_source": "World Gold Council, end-2025 estimate",
+      "above_ground_source_url": "https://www.gold.org/goldhub/data/how-much-gold",
+      "annual_mine_production_tonnes_2025": 3671.6,
+      "annual_mine_production_source": "World Gold Council, Gold Demand Trends FY2025",
+      "annual_mine_production_source_url": "https://www.gold.org/goldhub/research/gold-demand-trends/gold-demand-trends-full-year-2025",
+      "annual_supply_growth_pct": 1.67,
+      "remaining_reserves_tonnes_wgc": 54770,
+      "remaining_reserves_tonnes_usgs": 64000,
+      "stock_to_flow_ratio": 59.9,
+      "breakdown": {
+        "jewellery_tonnes": 97149,
+        "bars_coins_etfs_tonnes": 48634,
+        "central_banks_tonnes": 37755,
+        "industrial_other_tonnes": 32727
+      }
+    },
+    "bitcoin": {
+      "circulating_supply": 19920000,
+      "max_supply": 21000000,
+      "pct_issued": 94.86,
+      "current_block_reward_btc": 3.125,
+      "annual_issuance_btc": 164250,
+      "annual_supply_growth_pct": 0.82,
+      "stock_to_flow_ratio": 121.3,
+      "last_halving": "2024-04-19",
+      "next_halving_estimated": "2028-03-26",
+      "source": "Bitcoin protocol; Bleap; Swan Bitcoin",
+      "source_url": "https://www.swanbitcoin.com/education/bitcoin-halving-dates/"
+    }
+  },
+  "central_banks": {
+    "as_of": "2026-03-31",
+    "total_official_gold_tonnes": 36000,
+    "share_of_above_ground_pct": 17.2,
+    "net_purchases_2025_tonnes": 863.3,
+    "net_purchases_2024_tonnes": 1092.4,
+    "net_purchases_2023_tonnes": 1037,
+    "decade_avg_2010_2021_tonnes": 473,
+    "source": "World Gold Council, Gold Demand Trends FY2025",
+    "source_url": "https://www.gold.org/goldhub/research/gold-demand-trends/gold-demand-trends-full-year-2025/central-banks",
+    "top_holders": [
+      {"country": "United States", "tonnes": 8133, "code": "US"},
+      {"country": "Germany", "tonnes": 3350, "code": "DE"},
+      {"country": "Italy", "tonnes": 2452, "code": "IT"},
+      {"country": "France", "tonnes": 2437, "code": "FR"},
+      {"country": "China", "tonnes": 2313, "code": "CN"},
+      {"country": "Russia", "tonnes": 2305, "code": "RU"},
+      {"country": "Switzerland", "tonnes": 1040, "code": "CH"},
+      {"country": "India", "tonnes": 881, "code": "IN"},
+      {"country": "Japan", "tonnes": 846, "code": "JP"},
+      {"country": "Netherlands", "tonnes": 612, "code": "NL"},
+      {"country": "Poland", "tonnes": 582, "code": "PL"},
+      {"country": "Turkey", "tonnes": 535, "code": "TR"},
+      {"country": "Taiwan", "tonnes": 424, "code": "TW"},
+      {"country": "Uzbekistan", "tonnes": 416, "code": "UZ"},
+      {"country": "Portugal", "tonnes": 383, "code": "PT"}
+    ],
+    "top_buyers_2025": [
+      {"country": "Poland", "tonnes": 102},
+      {"country": "Kazakhstan", "tonnes": 57},
+      {"country": "China", "tonnes": 27},
+      {"country": "Czech Republic", "tonnes": 20},
+      {"country": "Turkey", "tonnes": 27}
+    ],
+    "bitcoin_holdings_note": "Central banks hold effectively zero Bitcoin in official reserves. The closest analogue is the U.S. Strategic Bitcoin Reserve announced March 2025, holding seized BTC.",
+    "annual_series": [
+      {"year": 2018, "tonnes": 656},
+      {"year": 2019, "tonnes": 605},
+      {"year": 2020, "tonnes": 255},
+      {"year": 2021, "tonnes": 463},
+      {"year": 2022, "tonnes": 1082},
+      {"year": 2023, "tonnes": 1037},
+      {"year": 2024, "tonnes": 1092},
+      {"year": 2025, "tonnes": 863}
+    ]
+  },
+  "households": {
+    "as_of": "2025-12-31",
+    "us_household_net_worth_usd": 175254847000000,
+    "us_household_net_worth_source": "Federal Reserve Z.1, Q4 2025",
+    "us_household_net_worth_source_url": "https://fred.stlouisfed.org/series/BOGZ1FL192090005Q",
+    "gold_held_by_us_households_estimate_usd": 1450000000000,
+    "gold_household_share_pct": 0.83,
+    "gold_household_note": "Approx. 10,500 tonnes in private US hands (jewellery, bars, coins, ETFs) at $4,505/oz",
+    "spot_btc_etf_aum_usd": 100094266030,
+    "spot_btc_etf_btc_held": 1304888,
+    "spot_btc_etf_pct_of_supply": 6.21,
+    "spot_btc_etf_source": "Bitbo / CoinGlass, 21 May 2026",
+    "spot_btc_etf_source_url": "https://bitbo.io/treasuries/us-etfs/",
+    "btc_total_market_cap_usd": 1537860669470,
+    "btc_household_share_pct": 0.88,
+    "btc_household_note": "Approximate exposure via spot ETFs + retail self-custody (US share ~25% of global)",
+    "etfs": [
+      {"ticker": "IBIT", "issuer": "BlackRock", "btc": 806259, "aum_usd": 61845861518},
+      {"ticker": "FBTC", "issuer": "Fidelity", "btc": 184889, "aum_usd": 14182273600},
+      {"ticker": "GBTC", "issuer": "Grayscale", "btc": 148699, "aum_usd": 11406302483},
+      {"ticker": "BTC", "issuer": "Grayscale Mini", "btc": 53303, "aum_usd": 4088745294},
+      {"ticker": "BITB", "issuer": "Bitwise", "btc": 37556, "aum_usd": 2880776122},
+      {"ticker": "ARKB", "issuer": "ARK 21Shares", "btc": 33301, "aum_usd": 2554456151},
+      {"ticker": "HODL", "issuer": "VanEck", "btc": 16651, "aum_usd": 1277258758},
+      {"ticker": "BTCO", "issuer": "Invesco Galaxy", "btc": 6540, "aum_usd": 501672562},
+      {"ticker": "Other", "issuer": "Franklin, Valkyrie, MSBT, WisdomTree, Hashdex", "btc": 17689, "aum_usd": 1355919542}
+    ]
+  },
+  "debasement": {
+    "as_of": "2026-04-30",
+    "m2_current_billions": 22686.0,
+    "m2_2015_billions": 11757.0,
+    "m2_pct_change_10y": 92.95,
+    "m2_source": "FRED M2SL · Federal Reserve",
+    "m2_source_url": "https://fred.stlouisfed.org/series/M2SL",
+    "debt_current_trillions": 39.0,
+    "debt_2015_trillions": 18.1,
+    "debt_pct_change_10y": 115.5,
+    "debt_source": "U.S. Treasury · TreasuryDirect",
+    "debt_source_url": "https://fiscaldata.treasury.gov/datasets/historical-debt-outstanding/",
+    "cpi_yoy_pct": 3.8,
+    "cpi_index": 333.020,
+    "cpi_index_2015": 237.0,
+    "cpi_pct_change_10y": 40.5,
+    "cpi_source": "BLS · CPI-U April 2026",
+    "cpi_source_url": "https://www.bls.gov/news.release/pdf/cpi.pdf",
+    "dollar_purchasing_power": 71.16,
+    "dollar_purchasing_power_note": "$1 in 2015 has the purchasing power of $0.71 today",
+    "m2_series": [
+      {"year": 2015, "value": 11757},
+      {"year": 2016, "value": 12252},
+      {"year": 2017, "value": 12846},
+      {"year": 2018, "value": 13386},
+      {"year": 2019, "value": 14079},
+      {"year": 2020, "value": 17041},
+      {"year": 2021, "value": 19527},
+      {"year": 2022, "value": 20902},
+      {"year": 2023, "value": 20724},
+      {"year": 2024, "value": 21486},
+      {"year": 2025, "value": 22354},
+      {"year": 2026, "value": 22686}
+    ],
+    "debt_series": [
+      {"year": 2015, "value": 18.1},
+      {"year": 2016, "value": 19.6},
+      {"year": 2017, "value": 20.2},
+      {"year": 2018, "value": 21.5},
+      {"year": 2019, "value": 22.7},
+      {"year": 2020, "value": 26.9},
+      {"year": 2021, "value": 28.9},
+      {"year": 2022, "value": 30.9},
+      {"year": 2023, "value": 33.1},
+      {"year": 2024, "value": 35.5},
+      {"year": 2025, "value": 38.0},
+      {"year": 2026, "value": 39.0}
+    ],
+    "cpi_series": [
+      {"year": 2015, "value": 237.0},
+      {"year": 2016, "value": 240.0},
+      {"year": 2017, "value": 245.1},
+      {"year": 2018, "value": 251.1},
+      {"year": 2019, "value": 255.7},
+      {"year": 2020, "value": 258.8},
+      {"year": 2021, "value": 271.0},
+      {"year": 2022, "value": 292.7},
+      {"year": 2023, "value": 304.7},
+      {"year": 2024, "value": 314.0},
+      {"year": 2025, "value": 322.0},
+      {"year": 2026, "value": 333.02}
+    ],
+    "narrative": "Since 2015, the M2 money supply has grown 93%, the federal debt has more than doubled (+116%), and consumer prices have risen 40%. Over the same period gold has tripled and Bitcoin has done +16,822%. The why-hold-either thesis lives here."
+  },
+  "valuation_metrics": {
+    "gold_market_cap_usd": 31833610000000,
+    "gold_market_cap_calc": "219,891 tonnes × 32,150.7 oz/tonne × $4,505.68/oz",
+    "bitcoin_market_cap_usd": 1537860669470,
+    "ratio_gold_to_btc_mcap": 20.7,
+    "as_of": "2026-05-24"
+  },
+  "regimes": [
+    {"date": "2020-03-16", "label": "COVID crash & QE infinity", "type": "macro"},
+    {"date": "2020-05-11", "label": "BTC halving #3 (6.25 BTC)", "type": "btc"},
+    {"date": "2022-02-24", "label": "Russia invades Ukraine — gold haven bid", "type": "macro"},
+    {"date": "2022-11-09", "label": "FTX collapse", "type": "btc"},
+    {"date": "2024-01-11", "label": "Spot BTC ETFs launch (US)", "type": "btc"},
+    {"date": "2024-04-19", "label": "BTC halving #4 (3.125 BTC)", "type": "btc"},
+    {"date": "2025-03-06", "label": "US Strategic Bitcoin Reserve announced", "type": "btc"},
+    {"date": "2026-01-28", "label": "Gold ATH $5,418", "type": "gold"}
+  ],
+  "scoreboard": [
+    {"metric": "Track record", "gold_score": 10, "btc_score": 6, "gold_note": "5,000+ years of monetary use", "btc_note": "17 years live, born 2009"},
+    {"metric": "Verifiable scarcity", "gold_score": 8, "btc_score": 10, "gold_note": "Mining adds ~1.7%/yr; ocean & asteroid reserves uncertain", "btc_note": "Hard-capped at 21M; auditable on-chain"},
+    {"metric": "Portability", "gold_score": 3, "btc_score": 10, "gold_note": "Physical, requires vaulting & insurance", "btc_note": "Borderless, 12 words across any border"},
+    {"metric": "Divisibility", "gold_score": 5, "btc_score": 10, "gold_note": "Bars hard to split; coins available", "btc_note": "1 BTC = 100M satoshis"},
+    {"metric": "Counterparty risk", "gold_score": 9, "btc_score": 8, "gold_note": "Physical is bearer; ETFs add layers", "btc_note": "Self-custody is bearer; exchange custody is not"},
+    {"metric": "Liquidity (daily volume)", "gold_score": 9, "btc_score": 7, "gold_note": "OTC $200B+/day; deepest market", "btc_note": "Spot ~$30B/day; deepest crypto"},
+    {"metric": "Volatility (lower is better)", "gold_score": 8, "btc_score": 3, "gold_note": "1Y vol ~24%", "btc_note": "1Y vol ~39%"},
+    {"metric": "Sovereign adoption", "gold_score": 10, "btc_score": 4, "gold_note": "Held by every major central bank", "btc_note": "El Salvador, US Strategic Reserve, Bhutan"},
+    {"metric": "Inflation hedge (long-run)", "gold_score": 9, "btc_score": 7, "gold_note": "Tracks money supply over centuries", "btc_note": "10Y +16,822% vs USD"},
+    {"metric": "Censorship resistance", "gold_score": 6, "btc_score": 10, "gold_note": "Confiscation precedent (1933 EO 6102)", "btc_note": "Sovereign keys, peer-to-peer"},
+    {"metric": "Industrial demand floor", "gold_score": 8, "btc_score": 2, "gold_note": "Electronics, dentistry, jewellery", "btc_note": "Purely monetary"},
+    {"metric": "Yield potential", "gold_score": 2, "btc_score": 5, "gold_note": "No native yield", "btc_note": "Lending markets exist; not native"}
+  ],
+  "narratives": {
+    "gold_bull": [
+      "Central banks added 863t in 2025 — 82% above the 2010-2021 average",
+      "Gold ATH $5,418 in Jan 2026 with 1Y return of +34%",
+      "Negative correlation to USD (-0.40) makes it the cleanest hedge to dollar weakness",
+      "5,000 years of monetary history; held by every major sovereign"
+    ],
+    "btc_bull": [
+      "Hard cap of 21M is verifiable; 94.86% already mined",
+      "Spot ETFs hold 1.3M BTC ($100B AUM) just 28 months after launch",
+      "Stock-to-flow of 121 — twice gold's S2F of 60",
+      "10Y return of +16,822% vs gold +270%"
+    ],
+    "gold_bear": [
+      "Heavy, hard to transport, requires custody fees",
+      "No yield, no industrial growth narrative beyond steady demand",
+      "Mining production rises 1-2% annually with no supply cap"
+    ],
+    "btc_bear": [
+      "1Y drawdown of -28% vs gold +34%; 5Y max DD of -50%",
+      "0.88% of US household net worth — still a fringe allocation",
+      "Zero central bank holdings outside of seized assets",
+      "39% annualized volatility makes it unstable as a unit of account"
+    ]
+  }
+}
